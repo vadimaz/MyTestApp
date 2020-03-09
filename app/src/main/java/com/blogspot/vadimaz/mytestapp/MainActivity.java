@@ -6,35 +6,68 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ImageView;
+import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.facebook.AccessToken;
+import com.facebook.AccessTokenTracker;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
 import com.facebook.Profile;
-import com.facebook.login.LoginManager;
+import com.facebook.ProfileTracker;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
+    private TextView id, name, email;
+    private ImageView image;
+
     public static final String TAG = "test_app";
     private CallbackManager callbackManager = CallbackManager.Factory.create();
     AccessToken accessToken;
     Profile profile;
+    AccessTokenTracker tokenTracker = new AccessTokenTracker() {
+        @Override
+        protected void onCurrentAccessTokenChanged(AccessToken oldAccessToken, AccessToken currentAccessToken) {
+            if (currentAccessToken != null) {
+                loadUserProfile(currentAccessToken);
+            } else {
+                eraseUserProfile();
+            }
+        }
+    };
+
+    ProfileTracker profileTracker = new ProfileTracker() {
+        @Override
+        protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
+            if (currentProfile != null) {
+                Log.d(TAG, currentProfile.getId());
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        id = findViewById(R.id.id);
+        name = findViewById(R.id.name);
+        email = findViewById(R.id.email);
+        image = findViewById(R.id.image);
         LoginButton loginButton = findViewById(R.id.login_button);
-        //CallbackManager callbackManager = CallbackManager.Factory.create();
-        loginButton.setPermissions("email");
-        //loginButton.setFragment(this); //if fragment
+        loginButton.setPermissions(Arrays.asList("email", "public_profile"));
 
-        LoginManager.getInstance().registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+        loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
 
@@ -68,9 +101,40 @@ public class MainActivity extends AppCompatActivity {
         profile = Profile.getCurrentProfile();
         boolean profileAvailable = profile != null;
         Log.d(TAG, "Profile is available: " + profileAvailable);
+    }
 
-        if (!isLoggedIn) {
-            LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile"));
-        }
+    private void loadUserProfile(AccessToken token) {
+        GraphRequest request = GraphRequest.newMeRequest(token, new GraphRequest.GraphJSONObjectCallback() {
+            @Override
+            public void onCompleted(JSONObject object, GraphResponse response) {
+                try {
+                    String f = object.getString("first_name");
+                    String l = object.getString("last_name");
+                    String e = object.getString("email");
+                    String i = object.getString("id");
+                    String u = "https://graph.facebook.com/" + i + "/picture?type=normal";
+                    Log.d(TAG, String.format("\nFirst name: %s\nLast name: %s\nEmail: %s\nId: %s\nImage URL: %s", f, l, e, i, u));
+
+                    id.setText(i);
+                    name.setText(String.format("%s %s", f, l));
+                    email.setText(e);
+                    Glide.with(MainActivity.this).load(u).into(image);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Bundle parameters = new Bundle();
+        parameters.putString("fields", "first_name, last_name, email, id");
+        request.setParameters(parameters);
+        request.executeAsync();
+    }
+
+    private void eraseUserProfile() {
+        id.setText("");
+        name.setText("");
+        email.setText("");
+        Glide.with(this).clear(image);
     }
 }
