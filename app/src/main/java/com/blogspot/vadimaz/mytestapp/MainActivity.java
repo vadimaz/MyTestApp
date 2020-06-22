@@ -4,8 +4,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -21,6 +23,9 @@ import com.facebook.Profile;
 import com.facebook.ProfileTracker;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.facebook.share.Sharer;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.widget.MessageDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -83,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "error");
             }
         });
+
+
     }
 
     @Override
@@ -136,5 +143,34 @@ public class MainActivity extends AppCompatActivity {
         name.setText("");
         email.setText("");
         Glide.with(this).clear(image);
+    }
+
+    public void showDialog(View v) {
+                MessageDialog messageDialog = new MessageDialog(this);
+        messageDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
+            @Override
+            public void onSuccess(Sharer.Result result) {
+                Log.d(TAG, "send success");
+            }
+
+            @Override
+            public void onCancel() {
+                Log.d(TAG, "send cancel");
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                Log.d(TAG, "send error");
+            }
+        });
+
+        Uri uri = Uri.parse("http://developer.android.com/reference/android/net/Uri.html");
+        ShareLinkContent linkContent = new ShareLinkContent.Builder()
+                .setContentTitle("....")
+                .setContentDescription("asd")
+                .setContentUrl(uri)
+                .setImageUrl(Uri.parse("http://www.w3schools.com/css/paris.jpg"))
+                .build();
+        messageDialog.show(linkContent);
     }
 }
