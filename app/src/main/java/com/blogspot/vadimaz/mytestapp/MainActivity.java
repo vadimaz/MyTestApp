@@ -23,6 +23,8 @@ import com.facebook.Profile;
 import com.facebook.ProfileTracker;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.facebook.messenger.MessengerUtils;
+import com.facebook.messenger.ShareToMessengerParams;
 import com.facebook.share.Sharer;
 import com.facebook.share.model.ShareLinkContent;
 import com.facebook.share.widget.MessageDialog;
@@ -146,31 +148,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showDialog(View v) {
-                MessageDialog messageDialog = new MessageDialog(this);
-        messageDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
-            @Override
-            public void onSuccess(Sharer.Result result) {
-                Log.d(TAG, "send success");
-            }
-
-            @Override
-            public void onCancel() {
-                Log.d(TAG, "send cancel");
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-                Log.d(TAG, "send error");
-            }
-        });
-
-        Uri uri = Uri.parse("http://developer.android.com/reference/android/net/Uri.html");
-        ShareLinkContent linkContent = new ShareLinkContent.Builder()
-                .setContentTitle("....")
-                .setContentDescription("asd")
-                .setContentUrl(uri)
-                .setImageUrl(Uri.parse("http://www.w3schools.com/css/paris.jpg"))
+        Uri uri = Uri.parse("android.resource://com.facebook.samples.messenger.send/" + R.drawable.com_facebook_button_icon);
+        ShareToMessengerParams params = ShareToMessengerParams
+                .newBuilder(uri, "image/jpeg")
                 .build();
-        messageDialog.show(linkContent);
+        MessengerUtils.shareToMessenger(this, 0,  params);
     }
 }
